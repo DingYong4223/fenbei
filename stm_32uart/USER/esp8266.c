@@ -66,10 +66,43 @@ void get8266mac(){
 //WIFI CONNECTED
 //WIFI GOT IP
 void esp8266_at_parse(char* command){
+	uint16_t hasDefWifi = 0;
+	uint16_t issetting = 0;
 	logi("at command: %s", command);
 	if(strstr(command, "FI DISCONNECT") != NULL) {
 		ESP8266_STA=ESP8266_WIFI_DISCONNECTED;
 	} else if(strstr(command, "GOT IP") != NULL) {
+		delay_ms(AT_COMMAND_DELAY);
+		UART_send_str(USART_8266, "AT+CWLAP\n");
+		delay_ms(AT_COMMAND_DELAY);
+		while(0 == get_AT_Command_2_AtBuffer()) {
+			delay_ms(AT_COMMAND_DELAY);
+		}
+		while(strstr((char *)at_buffer, "\r\n\r\nOK") == NULL) {
+			logi("temp: %s", (char*)at_buffer);
+			delay_ms(2 * AT_COMMAND_DELAY);
+			while(0 == get_AT_Command_2_AtBuffer()) {
+				delay_ms(AT_COMMAND_DELAY);
+			}
+		}
+		logi("--------------");
+		logi((char*)at_buffer);
+		if(strstr((char *)at_buffer, "uFi_0462B1") != NULL) {
+			logi("debugger wifi detected...");
+		} else {
+			logi("no debugger wifi detected...");
+		}
+		// if(hasDefWifi){
+			
+		// } else if(issetting){
+		// 	conn2server_and_login();
+		// }
+	}
+}
+/**
+* start to connect to server. and login after.
+*/
+void conn2server_and_login(){
 		ESP8266_STA=ESP8266_WIFI_CONNECTED;
 		get8266mac();
 		sprintf(at_command, "AT+CIPSTART=\"TCP\",\"%s\",%s\n", ESP8266_TCP_SERVER, ESP8266_TCP_PORT);
@@ -95,5 +128,4 @@ void esp8266_at_parse(char* command){
 		logi("login packet send...");
 		newPacketSend(CMD_ROOM_LOGIN_REQ, mac);
 		Send_Packet_And_Free();
-	}
 }

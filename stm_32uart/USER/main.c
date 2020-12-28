@@ -9,6 +9,7 @@
 #include "string.h"
 #include "func.h"
 #include "cJSON.h"
+#include "stmflash.h"
 
 extern u16 ESP8266_STA;
 extern rcv_buffer_t rcv_buf;
@@ -19,7 +20,11 @@ extern uint8_t at_buffer[];
 extern char at_command[];
 uint32_t no_conn_time_out=0;   //no connect time out.
 
- int main(void){
+#define WRITE_START_ADDR   ((uint32_t)0x08028000)
+
+uint16_t setting[100];
+
+int main(void){
 //	 char destin[20]={0};
 //	 char* macEnd;
 	u16 times=0, len;
@@ -28,6 +33,14 @@ uint32_t no_conn_time_out=0;   //no connect time out.
 	uart_init(RATE_BOUND);
 	uart2_init(RATE_BOUND);
 	LED_Init();
+	 
+	STMFLASH_Read(WRITE_START_ADDR , setting , 100);
+	//STMFLASH_Write(WRITE_START_ADDR , (uint16_t*)"this is delan's test" , 100);
+	logi("setting: %s", setting);
+	STMFLASH_Write(WRITE_START_ADDR , (uint16_t*)NULL , 100);
+	
+	STMFLASH_Read(WRITE_START_ADDR , setting , 100);
+	logi("setting: %s", setting);
  
 	while(1){
 		if(USART_RX_STA & BIT_AT_END) { //At command
@@ -84,6 +97,19 @@ uint32_t no_conn_time_out=0;   //no connect time out.
 	// 	}
 	// 	delay_ms(20);
 	// }
+}
+
+void parseSetting(){
+    char *jsonStr = "{\"wn\":\"test-wifi\",\"wp\":\"11111113\",\"si\":\"192.168.0.110\",\"sp\":\"8080\"}";
+    cJSON *root = cJSON_Parse(jsonStr);
+    cJSON *item = NULL;//cjson
+    if (!root) { //no setting
+        printf("Error before: [%s]\n", cJSON_GetErrorPtr());
+    } else {
+        item = cJSON_GetObjectItem(root, "wn");
+        printf("%s\n", item->valuestring);  //copy setting to config
+        cJSON_Delete(root);
+    }
 }
 
 /**

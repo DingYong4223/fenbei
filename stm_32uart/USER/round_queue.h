@@ -10,7 +10,7 @@
 **/
 
 //max receive number 200
-#define USART_REC_LEN  		220
+#define USART_REC_LEN  		2000
 typedef struct {
 	uint16_t read_index;
 	uint16_t write_index;

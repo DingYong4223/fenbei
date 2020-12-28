@@ -22,5 +22,6 @@ void esp8266_at_parse(char* command);
 uint16_t get_AT_Command_2_AtBuffer(void);
 void esp8266_send_at_command(char* command);
 void get8266mac(void);
+void conn2server_and_login();
 
 #endif
