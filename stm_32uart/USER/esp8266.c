@@ -17,6 +17,7 @@ uint8_t at_buffer[USART_REC_LEN];
 u16 temp;
 char at_command[40]={0};
 char mac[ESP8266_MAC_LAN]={0};
+u16 is_setting_mode = 0;
 
 void esp8266_tcp_send(uint8_t* bytes, uint16_t len){
 	UART_send_str(USART_8266, "AT+CIPSEND\n");
@@ -61,6 +62,33 @@ void get8266mac(){
 	logi("get mac:%s", mac);
 }
 
+void esp8266_send_at_command_and_wait_ok(char* command) {
+		UART_send_str(USART_8266, command);
+		delay_ms(AT_COMMAND_DELAY);
+		while(0 == get_AT_Command_2_AtBuffer()) {
+			delay_ms(AT_COMMAND_DELAY);
+		}
+		while(strstr((char *)at_buffer, "\r\n\r\nOK") == NULL) {
+			logi("temp: %s", (char*)at_buffer);
+			delay_ms(2 * AT_COMMAND_DELAY);
+			while(0 == get_AT_Command_2_AtBuffer()) {
+				delay_ms(AT_COMMAND_DELAY);
+			}
+		}
+}
+
+void connect2SettingWifiAndSendBroadcast() {
+	sprintf(at_command, "AT+CWJAP=\"%s\",\"%s\"", DEF_ESP8266_WIFI_NAME, DEF_ESP8266_WIFI_PWD);
+	esp8266_send_at_command_and_wait_ok(at_command);
+	esp8266_send_at_command_and_wait_ok("AT+CIPSTART=\"UDP\",\"255.255.255.255\",8080,5000");
+	
+	esp8266_send_at_command_and_wait_ok("AT+CIPSEND=4\n");
+	UART_send_str(USART_8266, "init");
+	while(0 == get_AT_Command_2_AtBuffer()) {
+		delay_ms(AT_COMMAND_DELAY);
+	}
+}
+
 //parse at command which end by 0x0d,0x0a
 //WIFI DISCONNECT
 //WIFI CONNECTED
@@ -87,18 +115,20 @@ void esp8266_at_parse(char* command){
 		}
 		logi("--------------");
 		logi((char*)at_buffer);
-		if(strstr((char *)at_buffer, "uFi_0462B1") != NULL) {
+		if(strstr((char *)at_buffer, DEF_ESP8266_WIFI_NAME) != NULL) {
 			logi("debugger wifi detected...");
+			is_setting_mode = 1;
+			connect2SettingWifiAndSendBroadcast();
 		} else {
 			logi("no debugger wifi detected...");
+			is_setting_mode = 0;
+			conn2server_and_login();
 		}
-		// if(hasDefWifi){
-			
-		// } else if(issetting){
-		// 	conn2server_and_login();
-		// }
 	}
 }
+
+
+
 /**
 * start to connect to server. and login after.
 */

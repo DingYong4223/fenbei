@@ -12,6 +12,9 @@
 #define AT_COMMAND_DELAY               500
 #define ESP8266_MAC_LAN                18
 
+#define DEF_ESP8266_WIFI_NAME          "fenbei"
+#define DEF_ESP8266_WIFI_PWD           "love0114"
+
 //TCP
 //#define ESP8266_TCP_SERVER             "192.168.0.103"
 #define ESP8266_TCP_SERVER             "106.55.12.110"
