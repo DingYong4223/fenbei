@@ -20,7 +20,8 @@ printf("\r\n")
 //#define logAt(fmt, ...) LOG_NOOP
 //#endif
 
-uint32_t readInt(uint8_t* data, uint16_t offset);
+uint16_t readShortOff(uint8_t* data, uint16_t offset);
+uint32_t readIntOff(uint8_t* data, uint16_t offset);
 char *del_char(char *str, char ch);
 
 #endif

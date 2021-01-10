@@ -13,7 +13,8 @@
 //Copyright(C) 11111111111111111111111111 2009-2019
 //All rights reserved									  
 ////////////////////////////////////////////////////////////////////////////////// 
-#define LED0 PAout(8)	// PA8
+//#define LED0 PAout(8)	// PA8
+#define LED0 PBout(8)	// PB8
 #define LED1 PDout(2)	// PD2	
 
 void LED_Init(void);//≥ı ºªØ
