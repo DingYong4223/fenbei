@@ -204,15 +204,12 @@ void uart3_init(u32 bound)
 void USART3_IRQHandler(void)           
  {              	//串口3中断服务程序 
 	 u8 Res2;
- 
 		if(USART_GetITStatus(USART3, USART_IT_RXNE) != RESET)  //mcu接受数据 接收中断(接收到的数据必须是0x0d 0x0a结尾)
-			{
+		{
 			Res2 =USART_ReceiveData(USART3);	//mcu接受数据读取接收到的数据,一位一位的接受的，res2指的是一位，如果是S，表示是命令信息的起始位
-			bufferPush(Res2);                  //收到数据存入缓冲区
-				
-			USART_SendData(USART1, Res2);      //for测试
-			
-			}   		 
+			bufferPush(Res2);                  //收到数据存入缓冲区	
+			//USART_SendData(USART1, Res2);      //for测试
+		}   		 
  }
 
 void UART_Putc(USART_TypeDef* USART, unsigned char c){
