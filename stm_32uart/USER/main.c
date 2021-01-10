@@ -79,8 +79,10 @@ u8 Rx_Config_Buffer[18]=	{0xAA,0x5C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 		} else { //tcp package
 			try2ParseTcpPacket();
 			if(USART_RX_STA & BIT_TCP_PACKET) {
+				no_conn_time_out = 0; //reset
 				parsePacket();
 				USART_RX_STA &= ~BIT_TCP_PACKET;
+				resetBuffer();
 			}
 		}
 		
@@ -166,13 +168,13 @@ void prosDeviceSyncPing() {
 
 /***processing server command**/
 void parsePacket(){
+	char m[8] = {0};
 	u8 Sum,Temp;
 	uint32_t result;
 	uint32_t type;
 	uint32_t action;
 	uint32_t mac433;
 	uint32_t light_no;
-	no_conn_time_out = 0; //reset
 	logi("recv cmd: 0x%04x\r\n", packetRecv.cmd);
 	switch(packetRecv.cmd){
 		case CMD_PING:
@@ -189,9 +191,11 @@ void parsePacket(){
 		case CMD_DEVICE_PUSH:
 			type = readShortOff(packetRecv.data, 0);
 			action = readIntOff(packetRecv.data, 2);
-			mac433 = atoi(strtok((char*)(packetRecv.data + 4), "-"));
+			
+			memcpy(packetRecv.data, m, packetRecv.bodyLength - 6);
+			mac433 = atoi(strtok(m, "-"));
 			light_no = atoi(strtok(NULL, "-"));
-			logi("type: %d, action: %d, mac433: %d, lightNo: %d, m: %s", type, action, mac433, light_no, packetRecv.data + 6);
+			logi("type: %d, action: %d, mac433: %d, lightNo: %d, m: %s", type, action, mac433, light_no, m);
 
 			Tx_date_Buffer[2]= (u8)(mac433 &0xFF);     //2.4G无线模块地址
 			Tx_date_Buffer[2] = Tx_date_Buffer[2]|0x40;   //设置RGB
