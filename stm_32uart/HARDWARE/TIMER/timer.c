@@ -22,6 +22,8 @@
 //这里使用的是定时器3!
 extern char Scan_Cnt,Main_Address,Send_Flag,Time_Cnt,RGB_Flag,Time_Flag;
 extern Wire24G_buff Wire24G_Data[];   //控制数据二维数组
+extern u16 ESP8266_STA;
+extern uint32_t no_conn_time_out;
 //extern Tx_date_Buffer[];
 
 void TIM3_Int_Init(u16 arr,u16 psc)
@@ -57,7 +59,7 @@ void TIM3_IRQHandler(void)   //TIM3中断
 //	u8 Sum,Temp;
 	if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET) //检查指定的TIM中断发生与否:TIM 中断源 
 		{
-		TIM_ClearITPendingBit(TIM3, TIM_IT_Update  );  //清除TIMx的中断待处理位:TIM 中断源 
+			TIM_ClearITPendingBit(TIM3, TIM_IT_Update  );  //清除TIMx的中断待处理位:TIM 中断源 
  
 	/*	
 			Sum = 0;           
@@ -77,17 +79,16 @@ void TIM3_IRQHandler(void)   //TIM3中断
 	//		 USART_SendData(USART3, Tes);
 	//		}
 */
-    Send_Flag =1;
-		Time_Cnt ++;
-		if (Time_Cnt == 0x20)
-		{
-			Time_Cnt = 0;
-			RGB_Flag = 1;
-			Time_Flag++;
-			if (Time_Flag>3)Time_Flag =0;
-		}
-
-		LED0=!LED0;
+			Send_Flag =1;
+			Time_Cnt ++;
+			if (Time_Cnt == 0x20) {
+				Time_Cnt = 0;
+				RGB_Flag = 1;
+				Time_Flag++;
+				if (Time_Flag>3)Time_Flag =0;
+			}
+			LED0=!LED0;
+			no_conn_time_out++;
 		}
 }
 

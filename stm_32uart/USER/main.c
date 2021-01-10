@@ -43,7 +43,7 @@ u8 Rx_Config_Buffer[18]=	{0xAA,0x5C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 //	 char destin[20]={0};
 //	 char* macEnd;
 	u8 Sum,Temp;
-	u16 times=0, len;
+	u16 len;
 	 
 	 Wire24G_Data[1].Wire24G_Addrees=1;
 	 Wire24G_Data[1].serial_num=1; 
@@ -84,17 +84,16 @@ u8 Rx_Config_Buffer[18]=	{0xAA,0x5C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 			}
 		}
 		
-		if(ESP8266_STA == ESP8266_TCP_DISCONNECTED && times % 100 == 0){
-			no_conn_time_out += 1000;
+		if(no_conn_time_out >= 100){
+			logi("8266 reboot...");
+			no_conn_time_out = 0;
 			//logi("no_conn_time_out: %d", no_conn_time_out);
-			if(no_conn_time_out >= 3 * TIME_PINGPONG_OUT){
+			if(ESP8266_STA == ESP8266_TCP_DISCONNECTED){
+				ESP8266_STA = ESP8266_WIFI_DISCONNECTED;
 				UART_send_str(USART_8266, "+++");
 				delay_ms(1000);
-				UART_send_str(USART_8266, "AT+RST\n");
-				no_conn_time_out = 0;
-				ESP8266_STA = ESP8266_WIFI_DISCONNECTED;
-				logi("8266 reboot");
 			}
+			UART_send_str(USART_8266, "AT+RST\n");
 		}
 		
 	//	if(++times % 100==0){
@@ -106,27 +105,27 @@ u8 Rx_Config_Buffer[18]=	{0xAA,0x5C,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
 		check_buffer();      //接受缓冲循环数据处理
 		//1---巡查下位机数据		
 		if (Send_Flag){	    //定时巡查		
-		while(Wire24G_Data[Scan_Cnt].Wire24G_Addrees == 0){  //直到有2.4G无线模块
-		Scan_Cnt++;
-		if(Scan_Cnt==Wire24G_Max)	Scan_Cnt=0;
-		}
-		if(Wire24G_Data[Scan_Cnt].Wire24G_Addrees > 0){  //有2.4G无线地址
-		   	Tx_date_Buffer[2] = Wire24G_Data[Scan_Cnt].Wire24G_Addrees;  //设置目标地址
-				Tx_date_Buffer[3] = Main_Address;                             //主机地址
-				Tx_date_Buffer[4] = Wire24G_Data[Scan_Cnt].Data_value1;       //下发数据
-	      Tx_date_Buffer[5] = Wire24G_Data[Scan_Cnt].Data_value2;  
-				Tx_date_Buffer[6] = Wire24G_Data[Scan_Cnt].Data_value3;
-			  Tx_date_Buffer[2] = Tx_date_Buffer[2]|0xc0;               //设置命令：查询下位机数据
+			while(Wire24G_Data[Scan_Cnt].Wire24G_Addrees == 0){  //直到有2.4G无线模块
+			Scan_Cnt++;
+			if(Scan_Cnt==Wire24G_Max)	Scan_Cnt=0;
+			}
+			if(Wire24G_Data[Scan_Cnt].Wire24G_Addrees > 0){  //有2.4G无线地址
+					Tx_date_Buffer[2] = Wire24G_Data[Scan_Cnt].Wire24G_Addrees;  //设置目标地址
+					Tx_date_Buffer[3] = Main_Address;                             //主机地址
+					Tx_date_Buffer[4] = Wire24G_Data[Scan_Cnt].Data_value1;       //下发数据
+					Tx_date_Buffer[5] = Wire24G_Data[Scan_Cnt].Data_value2;  
+					Tx_date_Buffer[6] = Wire24G_Data[Scan_Cnt].Data_value3;
+					Tx_date_Buffer[2] = Tx_date_Buffer[2]|0xc0;               //设置命令：查询下位机数据
 			}				
-		 Sum = 0;           
-		  for(Temp=0;Temp<7;Temp++)
-			 Sum += Tx_date_Buffer[Temp];        //计算校验和
-		  Tx_date_Buffer[7] = Sum;             //发送数据的校验和
-		  UART_Send(USART3,Tx_date_Buffer,8);  //串口3发送命令
-	//		UART_Send(USART1,Tx_date_Buffer,8);  //串口1发送命令
-		 Scan_Cnt++;         //下一条巡查
-		 if(Scan_Cnt==Wire24G_Max)	Scan_Cnt=0;	
-		 Send_Flag = 0; //巡查完成
+			Sum = 0;           
+			for(Temp=0;Temp<7;Temp++)
+				 Sum += Tx_date_Buffer[Temp];        //计算校验和
+			Tx_date_Buffer[7] = Sum;             //发送数据的校验和
+			UART_Send(USART3,Tx_date_Buffer,8);  //串口3发送命令
+		//		UART_Send(USART1,Tx_date_Buffer,8);  //串口1发送命令
+			Scan_Cnt++;         //下一条巡查
+			if(Scan_Cnt==Wire24G_Max)	Scan_Cnt=0;	
+			Send_Flag = 0; //巡查完成
    }
 	}
 	
@@ -173,10 +172,10 @@ void parsePacket(){
 	uint32_t action;
 	uint32_t mac433;
 	uint32_t light_no;
+	no_conn_time_out = 0; //reset
 	logi("recv cmd: 0x%04x\r\n", packetRecv.cmd);
 	switch(packetRecv.cmd){
 		case CMD_PING:
-			no_conn_time_out = 0; //reset
 			newPacketSendNullData(CMD_PONG);
 			Send_Packet_And_Free();
 			break;
@@ -216,5 +215,3 @@ void parsePacket(){
 	}
 	freePacket(&packetRecv);
 }
-
-
